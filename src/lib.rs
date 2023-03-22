@@ -10,6 +10,9 @@ Last Edited: 22/03/23
 */
 
 #![allow(dead_code)]
+use rand::seq::SliceRandom;
+
+#[derive(Debug)]
 enum Suit {
     Heart,
     Diamond,
@@ -17,6 +20,7 @@ enum Suit {
     Club,
 }
 
+#[derive(Debug)]
 struct Card {
     suit: Suit, 
     rank: u32,  // 0 is joker, 1 is ace - 13 is king
@@ -80,19 +84,6 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(number_of_players: usize) -> Game {
-        let mut players: Vec<Player> = Vec::new();
-        for i in 0..number_of_players {
-            players.push(Player::new(i));
-        }
-        Game {
-            deck: Game::make_deck(),
-            discard: vec![],
-            players,
-            player_turn: 0,
-        }
-    }
-
     fn make_deck() -> Vec<Card> {
         let mut deck = Vec::new();
         for i in 0..=13 {
@@ -107,8 +98,32 @@ impl Game {
         for i in 0..=13 {
             deck.push(Card::new(Suit::Club, i));
         }
+        let mut rng = rand::thread_rng();
+        deck.shuffle(&mut rng);
         return deck;
     }
+
+    pub fn new(number_of_players: usize) -> Game {
+        let mut players: Vec<Player> = Vec::new();
+        for i in 0..number_of_players {
+            players.push(Player::new(i));
+        }
+        Game {
+            deck: Game::make_deck(),
+            discard: vec![],
+            players,
+            player_turn: 0,
+        }
+    }
+
+    pub fn deal(&mut self, number_of_cards: usize) {
+        if number_of_cards * self.players.len() >= self.deck.len() {
+            panic!("Too many cards to deal");
+        }
+
+    }
+
+
 }
 
 #[cfg(test)]
