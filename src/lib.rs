@@ -3,6 +3,7 @@ A game engine API for casey
 The engine will play canasta and enforce the rule 
 
 On a branch for a simple implementation for solo hand with 2 canastas to win
+limited options with limited error checking
 
 Author: Joshua Dowling
 Created: 21/03/23
@@ -56,7 +57,6 @@ struct Meld {
 }
 
 impl Meld {
-    //new
 
 }
 
@@ -65,6 +65,7 @@ struct Player {
     id: usize,
     hand: Vec<Card>,
     melds: Vec<Meld>,
+    temp: Vec<Card>,
 }
 
 impl Player {
@@ -73,6 +74,7 @@ impl Player {
             id,
             hand: vec![],
             melds: vec![], 
+            temp: vec![],
         }
     }
 }
@@ -130,7 +132,34 @@ impl Game {
         }
     }
 
+    pub fn draw_deck(&mut self) {
+        let card = self.deck.pop();
+        match card {
+            Some(card) => {
+                self.players[self.player_turn].hand.push(card);
+            }
+            None => {
+                //End game
+            }
+        }
+    }
 
+    pub fn take_pack(&mut self) {}
+
+    pub fn print_hand(&mut self) {
+        println!("Hand of player {}", self.player_turn);
+        let hand = &self.players[self.player_turn].hand;
+        for (i, card) in hand.iter().enumerate() {
+            println!("{}: {:?}", i, card);
+        }
+    }
+
+    pub fn throw(&mut self, card: usize) {
+        assert!(card < self.players[self.player_turn].hand.len());
+        self.discard.push(self.players[self.player_turn].hand.remove(card));
+        self.player_turn += 1; 
+        self.player_turn %= self.players.len();
+    }
 }
 
 #[cfg(test)]
