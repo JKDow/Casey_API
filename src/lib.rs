@@ -1,30 +1,15 @@
 /* 
 A game engine API for casey 
 The engine will play canasta and enforce the rule 
+
+On a branch for a simple implementation for solo hand with 2 canastas to win
+
 Author: Joshua Dowling
 Created: 21/03/23
 Last Edited: 22/03/23
 */
 
-
-
-/* 
-implement game_setting trait with get methods for everything 
-implement trait for game too
-
-different structs for games and hands 
-different structs for solo and team? Probably not 
-    Different settings structs for each though 
-
-
-Seperate settings structs for solo and team 
-Different game struct for game and hand 
-game struct can contain hand struct? 
-*/
-
 #![allow(dead_code)]
-
-use std::fmt::Error;
 enum Suit {
     Heart,
     Diamond,
@@ -74,79 +59,37 @@ struct Player {
     id: usize,
     hand: Vec<Card>,
     melds: Vec<Meld>,
-    team_number: usize,
 }
 
 impl Player {
-    fn new(id: usize, team_number: usize) -> Player {
+    fn new(id: usize) -> Player {
         Player { 
             id,
             hand: vec![],
             melds: vec![], 
-            team_number 
         }
     }
 }
 
-pub struct GameSettings {
-    players_per_team: usize,
-    number_of_teams: usize,
-    points_first_meld: usize,
-    out_canastas: usize,
-    points_to_win: usize, //set to 0 if just a hand
-    first_meld_increment: usize,
-} 
-
-impl GameSettings {
-    pub fn new(players: usize) -> GameSettings {
-        GameSettings {
-            players_per_team: 1,
-            number_of_teams: players,
-            points_first_meld: 50,
-            out_canastas: 2,
-            points_to_win: 0,
-            first_meld_increment: 0,
-        }
-    }
-
-    pub fn set_teams(&mut self, teams: usize) -> Result<usize,Error> {
-
-
-
-
-
-        return Ok(0);
-    }
-}
 
 pub struct Game {
     deck: Vec<Card>,
     discard: Vec<Card>, 
     players: Vec<Player>, //first player to play (Player after "Dealer") is player 0
     player_turn: usize,
-    round_number: usize,
-
-    parameters: GameSettings,
 }
 
 impl Game {
-    pub fn new(settings: GameSettings) -> Game {
+    pub fn new(number_of_players: usize) -> Game {
         let mut players: Vec<Player> = Vec::new();
-        let mut team_num = 0; 
-        for i in 0..(settings.number_of_teams * settings.players_per_team) {
-            players.push(Player::new(i, team_num));
-            team_num += 1;
-            if team_num == settings.number_of_teams {
-                team_num = 0;
-            }
+        for i in 0..number_of_players {
+            players.push(Player::new(i));
         }
         Game {
             deck: Game::make_deck(),
             discard: vec![],
             players,
             player_turn: 0,
-            round_number: 0,
-            parameters: settings
         }
     }
 
