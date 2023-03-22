@@ -48,6 +48,7 @@ impl Card {
     }
 }
 
+#[derive(Debug)]
 struct Meld {
     rank: u32,
     cards: Vec<Card>,
@@ -59,6 +60,7 @@ impl Meld {
 
 }
 
+#[derive(Debug)]
 struct Player {
     id: usize,
     hand: Vec<Card>,
@@ -104,12 +106,13 @@ impl Game {
     }
 
     pub fn new(number_of_players: usize) -> Game {
+        let deck = Game::make_deck();
         let mut players: Vec<Player> = Vec::new();
         for i in 0..number_of_players {
             players.push(Player::new(i));
         }
         Game {
-            deck: Game::make_deck(),
+            deck,
             discard: vec![],
             players,
             player_turn: 0,
@@ -120,7 +123,11 @@ impl Game {
         if number_of_cards * self.players.len() >= self.deck.len() {
             panic!("Too many cards to deal");
         }
-
+        for _ in 0..number_of_cards {
+            for i in 0..self.players.len() {
+                self.players[i].hand.push(self.deck.pop().unwrap())
+            }
+        }
     }
 
 
