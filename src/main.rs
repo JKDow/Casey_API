@@ -1,16 +1,11 @@
 use casey_api_0::*;
 
-
 fn main() {
 
-    let mut game = Game::new(2);
+    let mut game = Game::new(3);
     game.deal(10);
-    game.print_hand();
+    prints::print_hand(game.get_hand());
     game.draw_deck();
-    println!("");
-    game.print_hand();
-    println!("");
-    game.throw(2); 
-    game.print_hand();
-
+    let hand = game.get_hand(); 
+    
 }

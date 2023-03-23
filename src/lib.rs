@@ -13,7 +13,7 @@ Last Edited: 22/03/23
 #![allow(dead_code)]
 use rand::seq::SliceRandom;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Suit {
     Heart,
     Diamond,
@@ -22,7 +22,7 @@ enum Suit {
 }
 
 #[derive(Debug)]
-struct Card {
+pub struct Card {
     suit: Suit, 
     rank: u32,  // 0 is joker, 1 is ace - 13 is king
     value: u32, //how many points is the card worth 
@@ -47,6 +47,14 @@ impl Card {
             value,
         }
     }
+
+    fn is_wild(&self) -> bool {
+        if self.rank == 0 || self.rank == 2 {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -57,7 +65,26 @@ struct Meld {
 }
 
 impl Meld {
+    fn can_meld(cards: &Vec<Card>) -> bool {
+        if cards.len() < 3 { return false; }
+        let suit = &cards[0].suit;
+        let mut wild_counter = 0; 
+        for card in cards {
+            if card.is_wild() {
+                wild_counter += 1;
+            } else if card.suit != *suit || card.rank == 3 {
+                return false;
+            }
+        }
+        if cards.len() - wild_counter < wild_counter {
+            return false;
+        }
+        return true;
+    } 
 
+    fn can_take_pack(cards: &Vec<Card>, top_discard: &Card) -> bool {
+        todo!();
+    }
 }
 
 #[derive(Debug)]
@@ -83,6 +110,7 @@ impl Player {
 pub struct Game {
     deck: Vec<Card>,
     discard: Vec<Card>, 
+    frozen: bool,
     players: Vec<Player>, //first player to play (Player after "Dealer") is player 0
     player_turn: usize,
 }
@@ -116,6 +144,7 @@ impl Game {
         Game {
             deck,
             discard: vec![],
+            frozen: false,
             players,
             player_turn: 0,
         }
@@ -130,9 +159,10 @@ impl Game {
                 self.players[i].hand.push(self.deck.pop().unwrap())
             }
         }
+        self.discard.push(self.deck.pop().unwrap());
     }
 
-    pub fn draw_deck(&mut self) {
+    pub fn draw_deck(&mut self) { //draw top card from the deck
         let card = self.deck.pop();
         match card {
             Some(card) => {
@@ -144,21 +174,42 @@ impl Game {
         }
     }
 
-    pub fn take_pack(&mut self) {}
-
-    pub fn print_hand(&mut self) {
-        println!("Hand of player {}", self.player_turn);
-        let hand = &self.players[self.player_turn].hand;
-        for (i, card) in hand.iter().enumerate() {
-            println!("{}: {:?}", i, card);
-        }
+    pub fn take_pack(&mut self) -> bool { //try to make the current pack with the temp cards 
+        todo!();
     }
 
-    pub fn throw(&mut self, card: usize) {
+    pub fn throw(&mut self, card: usize) { //throws card with 'card' index
         assert!(card < self.players[self.player_turn].hand.len());
         self.discard.push(self.players[self.player_turn].hand.remove(card));
         self.player_turn += 1; 
         self.player_turn %= self.players.len();
+    }
+
+    pub fn get_hand(&self) -> &Vec<Card> { //returns reference to hand of current player 
+        return &self.players[self.player_turn].hand;
+    }
+
+    pub fn get_discard(&self) -> &Vec<Card> { //returns reference to discard pile 
+        return &self.discard;
+    }
+}
+
+pub mod prints {
+    use super::Card;
+    pub fn print_discard(cards: &Vec<Card>) {
+        println!("Discard pile with most recent card printing first");
+        for card in cards.iter().rev() {
+            println!("{:?}", card);
+        }
+        println!("");
+    }
+
+    pub fn print_hand(hand: &Vec<Card>) {
+        println!("Hand of player");
+        for (i, card) in hand.iter().enumerate() {
+            println!("{}: {:?}", i, card);
+        }
+        println!("");
     }
 }
 
