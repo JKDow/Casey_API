@@ -57,56 +57,6 @@ impl Card {
     }
 }
 
-#[derive(Debug)]
-struct Meld {
-    rank: u32,
-    cards: Vec<Card>,
-    natural: bool,
-}
-
-impl Meld {
-    fn can_meld(cards: &Vec<Card>) -> bool {
-        if cards.len() < 3 { return false; }
-        let suit = &cards[0].suit;
-        let mut wild_counter = 0; 
-        for card in cards {
-            if card.is_wild() {
-                wild_counter += 1;
-            } else if card.suit != *suit || card.rank == 3 {
-                return false;
-            }
-        }
-        if cards.len() - wild_counter < wild_counter {
-            return false;
-        }
-        return true;
-    } 
-
-    fn can_take_pack(cards: &Vec<Card>, top_discard: &Card) -> bool {
-        todo!();
-    }
-}
-
-#[derive(Debug)]
-struct Player {
-    id: usize,
-    hand: Vec<Card>,
-    melds: Vec<Meld>,
-    temp: Vec<Card>,
-}
-
-impl Player {
-    fn new(id: usize) -> Player {
-        Player { 
-            id,
-            hand: vec![],
-            melds: vec![], 
-            temp: vec![],
-        }
-    }
-}
-
-
 pub struct Game {
     deck: Vec<Card>,
     discard: Vec<Card>, 
@@ -181,6 +131,7 @@ impl Game {
     pub fn throw(&mut self, card: usize) { //throws card with 'card' index
         assert!(card < self.players[self.player_turn].hand.len());
         self.discard.push(self.players[self.player_turn].hand.remove(card));
+        //clear temp after throw 
         self.player_turn += 1; 
         self.player_turn %= self.players.len();
     }
@@ -191,6 +142,16 @@ impl Game {
 
     pub fn get_discard(&self) -> &Vec<Card> { //returns reference to discard pile 
         return &self.discard;
+    }
+
+    // function that pushes a card from current players hand to temp melds 
+    //returns bool indicating if it was successful 
+    pub fn push_temp(&mut self, card: usize) -> bool {
+        todo!();
+    }
+
+    pub fn push_temp_wild(&mut self, card: usize, rank: usize) -> bool {
+        todo!(); 
     }
 }
 
@@ -213,5 +174,8 @@ pub mod prints {
     }
 }
 
+mod background; 
+
 #[cfg(test)]
 mod tests;
+
