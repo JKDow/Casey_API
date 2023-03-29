@@ -11,6 +11,7 @@ Last Edited: 22/03/23
 */
 
 #![allow(dead_code)]
+
 pub mod game {
     pub mod cards;
     pub mod player;
@@ -23,12 +24,12 @@ pub mod game {
         deck: Vec<Card>,
         discard: Vec<Card>, 
         frozen: bool,
-        players: Vec<Player>, //first player to play (Player after "Dealer") is player 0
+        pub players: Vec<Player>, //first player to play (Player after "Dealer") is player 0
         player_turn: usize,
     }
 
     impl Game {
-        fn make_deck() -> Vec<Card> {
+        fn make_deck() -> Vec<Card> { //helper function that creates the deck 
             let mut deck = Vec::new();
             for i in 0..=13 {
                 deck.push(Card::new(Suit::Heart, i));
@@ -74,34 +75,27 @@ pub mod game {
             self.discard.push(self.deck.pop().unwrap());
         }
 
-        pub fn take_pack(&mut self) -> bool { //try to make the current pack with the temp cards 
-            todo!();
-        }
-
-        pub fn throw(&mut self, card: usize) { //throws card with 'card' index
-            assert!(card < self.players[self.player_turn].hand.len());
-            self.discard.push(self.players[self.player_turn].hand.remove(card));
-            //clear temp after throw 
-            self.player_turn += 1; 
-            self.player_turn %= self.players.len();
-        }
-
-        pub fn get_hand(&self) -> &Vec<Card> { //returns reference to hand of current player 
-            return &self.players[self.player_turn].hand;
-        }
-
         pub fn get_discard(&self) -> &Vec<Card> { //returns reference to discard pile 
             return &self.discard;
         }
 
-        // function that pushes a card from current players hand to temp melds 
-        //returns bool indicating if it was successful 
-        pub fn push_temp(&mut self, card: usize) -> bool {
-            todo!();
+        pub fn current_player(&self) -> usize {
+            self.player_turn
         }
 
-        pub fn push_temp_wild(&mut self, card: usize, rank: usize) -> bool {
-            todo!();
+        pub fn get_player(&mut self, id: usize) -> &mut Player {
+            return &mut self.players[id];
+        }
+
+        fn next_turn(&mut self) {
+            self.player_turn += 1; 
+            self.player_turn %= self.players.len();
+            self.players[self.player_turn].turn_phase = player::TurnPhase::Draw;
+        }
+
+        pub fn to_discard(&mut self, card: Card) {
+            self.discard.push(card);
+            self.next_turn();        
         }
     }
 }
@@ -126,7 +120,35 @@ pub mod prints {
 }
 
 pub mod errors {
-    
+    use std::fmt;
+
+    #[derive(Debug)]
+    pub enum TurnErrorType {
+        WrongGamePhase,
+        GamesOver, 
+        InvalidCard,
+    }
+    #[derive(Debug)]
+
+    pub struct TurnError {
+        error_type: TurnErrorType,
+        msg: String,
+    }
+
+    impl fmt::Display for TurnError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.msg)
+        }
+    }
+
+    impl TurnError {
+        pub(crate) fn invalid_card(msg: &str) -> TurnError {
+            TurnError { error_type: TurnErrorType::InvalidCard, msg: String::from(msg) }
+        }
+        pub(crate) fn turn_phase(msg: &str) -> TurnError {
+            TurnError { error_type: TurnErrorType::WrongGamePhase, msg: String::from(msg) }
+        }
+    }
 }
 
 #[cfg(test)]
