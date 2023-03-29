@@ -24,7 +24,7 @@ pub mod game {
         deck: Vec<Card>,
         discard: Vec<Card>, 
         frozen: bool,
-        pub players: Vec<Player>, //first player to play (Player after "Dealer") is player 0
+        players: Vec<Player>, //first player to play (Player after "Dealer") is player 0
         player_turn: usize,
     }
 
@@ -93,9 +93,13 @@ pub mod game {
             self.players[self.player_turn].turn_phase = player::TurnPhase::Draw;
         }
 
-        pub fn to_discard(&mut self, card: Card) {
+        pub fn push_discard(&mut self, card: Card) {
             self.discard.push(card);
             self.next_turn();        
+        }
+
+        pub fn pop_deck(&mut self) -> Option<Card> {
+            self.deck.pop()
         }
     }
 }
@@ -121,11 +125,12 @@ pub mod prints {
 
 pub mod errors {
     use std::fmt;
+    use crate::game::cards::Card;
 
     #[derive(Debug)]
     pub enum TurnErrorType {
-        WrongGamePhase,
-        GamesOver, 
+        NotThrowPhase,
+        NotDrawPhase(Card), 
         InvalidCard,
     }
     #[derive(Debug)]
@@ -145,8 +150,11 @@ pub mod errors {
         pub(crate) fn invalid_card(msg: &str) -> TurnError {
             TurnError { error_type: TurnErrorType::InvalidCard, msg: String::from(msg) }
         }
-        pub(crate) fn turn_phase(msg: &str) -> TurnError {
-            TurnError { error_type: TurnErrorType::WrongGamePhase, msg: String::from(msg) }
+        pub(crate) fn not_draw_phase(msg: &str, card: Card) -> TurnError {
+            TurnError { error_type: TurnErrorType::NotDrawPhase(card), msg: String::from(msg) }
+        }
+        pub(crate) fn not_throw_phase(msg: &str) -> TurnError {
+            TurnError { error_type: TurnErrorType::NotThrowPhase, msg: String::from(msg) }
         }
     }
 }

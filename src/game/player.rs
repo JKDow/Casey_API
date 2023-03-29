@@ -40,7 +40,7 @@ impl Player {
 
     pub fn throw(&mut self, card: usize) -> Result<Card, TurnError>{ //throws card with 'card' index
         if self.turn_phase != TurnPhase::Throw {
-            return Err(TurnError::turn_phase("Can only throw on your turn and after drawing a card")); //Display error phase 
+            return Err(TurnError::not_throw_phase("Can only throw on your turn and after drawing a card")); //Display error phase 
         }
         if card >= self.hand.len() {
             return Err(TurnError::invalid_card("Card index is out of bounds"));
@@ -49,17 +49,13 @@ impl Player {
         return Ok(self.hand.remove(card));
     }
 
-    //check its your turn with error type 
-    pub fn draw_deck(&mut self, game: &mut Game) { //draw top card from the deck
-        let card = game.deck.pop();
-        match card {
-            Some(card) => {
-                self.hand.push(card);
-            }
-            None => {
-                //End game
-            }
+    //returns a referene to the card or error containing the passed card
+    pub fn draw_deck(&mut self, card: Card) -> Result<&Card, TurnError>{ //draw top card from the deck
+        if self.turn_phase != TurnPhase::Draw {
+            return Err(TurnError::not_draw_phase("Can only draw on your turn when you havnt already", card)); //Display error phase 
         }
+        self.hand.push(card);
+        return Ok(&self.hand[self.hand.len()-1]);
     }
 
     // function that pushes a card from current players hand to temp melds 

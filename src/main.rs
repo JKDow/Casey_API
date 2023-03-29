@@ -7,6 +7,5 @@ fn main() {
     let id = game.current_player();
 
     let mut player = game.get_player(id);
-    let a = player.throw(0).unwrap();
-    game.to_discard(a);
+    
 }
