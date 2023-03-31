@@ -1,6 +1,5 @@
-use crate::errors::TurnError;
+use crate::errors::{TurnError, TempMeldError};
 use super::cards::*;
-use super::*;
 
 #[derive(Debug, PartialEq)]
 pub(crate) enum TurnPhase {
@@ -16,7 +15,7 @@ pub struct Player {
 
     id: usize,
     melds: Vec<Meld>,
-    temp: Vec<Meld>,
+    temp: Option<Meld>,
 }
 
 impl Player {
@@ -25,7 +24,7 @@ impl Player {
             id,
             hand: vec![],
             melds: vec![], 
-            temp: vec![],
+            temp: None,
             turn_phase: TurnPhase::Not,
         }
     }
@@ -59,21 +58,57 @@ impl Player {
     }
 
     // function that pushes a card from current players hand to temp melds 
-    //returns bool indicating if it was successful 
-    pub fn push_temp(&mut self, card: usize) -> bool {
-        todo!();
+    // returns result
+    pub fn push_temp(&mut self, card: usize) -> Result<&Vec<Card>, TempMeldError> {
+        // if index is out of range return error
+        if card >= self.hand.len() {
+            return Err(TempMeldError::card_number("Card number out of range"));
+        }
+        //take card from deck
+        let card = self.hand.remove(card);
+        //check if theres already a meld 
+        match self.temp.take() {
+            None => { //if not create a new one
+                match Meld::new(card) {
+                    Ok(meld) => {
+                        self.temp = Some(meld);
+                        if let Some(ref x) = self.temp {
+                            return Ok(x.get_cards());
+                        } else {return Err(TempMeldError::card_number("How did you reach this error??"))}
+                    }
+                    Err(e) => {
+                        let card = e.get_card().unwrap();
+                        self.hand.push(card);
+                        return Err(TempMeldError::from(e));
+                    }
+                }
+            }
+            Some(mut meld) => {
+                match meld.add(card) {
+                    Ok(_) => {
+                        self.temp = Some(meld);
+                        if let Some(ref x) = self.temp {
+                            return Ok(x.get_cards());
+                        } else {return Err(TempMeldError::card_number("How did you reach this error??"))}
+                    }
+                    Err(e) => {
+                        self.temp = Some(meld);
+                        let card = e.get_card().unwrap();
+                        self.hand.push(card);
+                        return Err(TempMeldError::from(e));
+                    }
+                }
+            }
+        }
     }
 
-    pub fn push_temp_wild(&mut self, card: usize, rank: usize) -> bool {
-        todo!();
-    }
-
-    pub fn clear_temp(&mut self) -> bool {
-        todo!();
+    //returns all cards from temp to hand 
+    //sets temp to none
+    pub fn clear_temp(&mut self) {
+        if let Some(meld) = self.temp.take() {
+            for card in meld.clear() {
+                self.hand.push(card);
+            }
+        }
     }    
-
-    pub fn clear_temp_rank(&mut self) -> bool {
-        todo!();
-    }
-
 }

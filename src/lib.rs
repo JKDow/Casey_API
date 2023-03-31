@@ -101,6 +101,10 @@ pub mod game {
         pub fn pop_deck(&mut self) -> Option<Card> {
             self.deck.pop()
         }
+
+        pub fn push_deck(&mut self, card: Card) {
+            self.deck.push(card);
+        }
     }
 }
 
