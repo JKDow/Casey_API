@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::errors::{TurnError, TempMeldError};
 use super::cards::*;
 
@@ -14,7 +15,7 @@ pub struct Player {
     pub(crate) turn_phase: TurnPhase,
 
     id: usize,
-    melds: Vec<Meld>,
+    melds: HashMap<usize, Meld>,
     temp: Option<Meld>,
 }
 
@@ -23,20 +24,24 @@ impl Player {
         Player { 
             id,
             hand: vec![],
-            melds: vec![], 
+            melds: HashMap::new(), 
             temp: None,
             turn_phase: TurnPhase::Not,
         }
     }
 
+    //returns true if its the players turn
     pub fn my_turn(&self) -> bool {
         self.turn_phase != TurnPhase::Not
     }
 
+    //returns a reference to the players hand
     pub fn get_hand(&self) -> &Vec<Card> { //returns reference to hand of player
         return &self.hand;
     }
 
+    //Attemp to throw a card from the players hand
+    //returns result containing the card or error
     pub fn throw(&mut self, card: usize) -> Result<Card, TurnError>{ //throws card with 'card' index
         if self.turn_phase != TurnPhase::Throw {
             return Err(TurnError::not_throw_phase("Can only throw on your turn and after drawing a card")); //Display error phase 
@@ -111,4 +116,30 @@ impl Player {
             }
         }
     }    
+
+    //returns a reference to the temp meld
+    pub fn get_temp(&self) -> Option<&Vec<Card>> {
+        if let Some(ref meld) = self.temp {
+            return Some(meld.get_cards());
+        }
+        return None;
+    }
+
+    //takes temp and moves it to melds if it is valid 
+    //reference to melds if ok or temp meld error if not
+    pub fn commit_temp(&mut self) -> Result<&Vec<Meld>, TempMeldError> {
+        if let Some(meld) = self.temp.take() {
+            match meld.commit() {
+                Ok(_) => {
+                    self.melds.push(meld);
+                    return Ok(&self.melds);
+                }
+                Err(e) => {
+                    self.temp = Some(meld);
+                    return Err(TempMeldError::from(e));
+                }
+            }
+        }
+        return Err(TempMeldError::no_meld("No meld to commit"));
+    }
 }

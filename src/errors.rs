@@ -36,6 +36,7 @@ pub enum TempMeldType{
     PushWild,
     InvalidCardNumber,
     InvalidRank,
+    InvalidMeld,
 }
 
 pub struct TempMeldError {
@@ -59,12 +60,15 @@ impl TempMeldError {
     pub(crate) fn rank(msg: &str) -> TempMeldError {
         TempMeldError { error_type: TempMeldType::InvalidRank, msg: String::from(msg) }
     }
+    pub(crate) fn meld(msg: &str) -> TempMeldError {
+        TempMeldError { error_type: TempMeldType::InvalidMeld, msg: String::from(msg) }
+    }
 
     pub(crate) fn from(error: MeldError) -> TempMeldError {
         match error.error_type {
             MeldErrorType::InvalidRank => TempMeldError::rank(&error.msg),
-            MeldErrorType::InvalidCard(card) => TempMeldError::card_number(&error.msg),
-            MeldErrorType::TooManyWilds(card) => TempMeldError::wild(&error.msg),
+            MeldErrorType::InvalidCard(_) => TempMeldError::card_number(&error.msg),
+            MeldErrorType::TooManyWilds(_) => TempMeldError::wild(&error.msg),
             MeldErrorType::InvalidIndex => TempMeldError::card_number(&error.msg),
         }
     }
