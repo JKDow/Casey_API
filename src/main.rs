@@ -5,7 +5,7 @@ fn main() {
     game.deal(11);
     
     let id = game.current_player();
-
     let mut player = game.get_player(id);
+    
     
 }
