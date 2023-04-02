@@ -47,7 +47,7 @@ impl Card {
 
 #[derive(Debug)]
 pub struct Meld {
-    rank: usize,
+    pub(crate) rank: usize,
     cards: Vec<Card>,
     natural: bool,
 }
@@ -111,9 +111,18 @@ impl Meld {
     }
 
     //returns a reference to the cards in the meld 
-    pub(crate)fn get_cards(&self) -> &Vec<Card> {
+    pub(crate) fn get_cards(&self) -> &Vec<Card> {
         &self.cards
     }
+
+    pub(crate) fn combine(&mut self, meld: Meld) -> Result<(), MeldError> {
+        if self.rank != meld.rank {
+            return Err(MeldError::invalid_rank("Cannot combine melds of different ranks"));
+        }
+        self.cards.extend(meld.cards);
+        Ok(())
+    }
+
 }
 
 

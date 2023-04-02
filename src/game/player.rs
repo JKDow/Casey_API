@@ -127,19 +127,17 @@ impl Player {
 
     //takes temp and moves it to melds if it is valid 
     //reference to melds if ok or temp meld error if not
-    pub fn commit_temp(&mut self) -> Result<&Vec<Meld>, TempMeldError> {
+    pub fn commit_temp(&mut self) -> Result<(), TempMeldError> {
         if let Some(meld) = self.temp.take() {
-            match meld.commit() {
-                Ok(_) => {
-                    self.melds.push(meld);
-                    return Ok(&self.melds);
-                }
-                Err(e) => {
-                    self.temp = Some(meld);
+            if let Some(existing) = self.melds.get_mut(&meld.rank) {
+                if let Err(e) = existing.combine(meld) {
                     return Err(TempMeldError::from(e));
                 }
+                return Ok(());
             }
+            self.melds.insert(meld.rank, meld); 
         }
-        return Err(TempMeldError::no_meld("No meld to commit"));
+        return Err(TempMeldError::meld("No meld to commit"));
     }
+
 }
