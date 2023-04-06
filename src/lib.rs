@@ -1,172 +1,133 @@
 /* 
 A game engine API for casey 
 The engine will play canasta and enforce the rule 
+
+On a branch for a simple implementation for solo hand with 2 canastas to win
+limited options with limited error checking
+
 Author: Joshua Dowling
 Created: 21/03/23
 Last Edited: 22/03/23
 */
 
-
-
-/* 
-implement game_setting trait with get methods for everything 
-implement trait for game too
-
-different structs for games and hands 
-different structs for solo and team? Probably not 
-    Different settings structs for each though 
-
-
-Seperate settings structs for solo and team 
-Different game struct for game and hand 
-game struct can contain hand struct? 
-*/
-
 #![allow(dead_code)]
 
-use std::fmt::Error;
-enum Suit {
-    Heart,
-    Diamond,
-    Spade,
-    Club,
-}
+pub mod game {
+    pub mod cards;
+    pub mod player;
 
-struct Card {
-    suit: Suit, 
-    rank: u32,  // 0 is joker, 1 is ace - 13 is king
-    value: u32, //how many points is the card worth 
-}
+    use rand::seq::SliceRandom;
+    use cards::*;
+    use player::*;
 
-impl Card {
-    fn new(suit: Suit, rank: u32) -> Card {
-        let value = 
-            if rank == 0 { 50 } 
-            else if rank <= 2 { 20 }
-            else if rank == 3 {
-                match suit {
-                    Suit::Heart | Suit::Diamond => 100,
-                    Suit::Spade | Suit::Club => 5,
+    pub struct Game {
+        deck: Vec<Card>,
+        discard: Vec<Card>, 
+        frozen: bool,
+        players: Vec<Player>, //first player to play (Player after "Dealer") is player 0
+        player_turn: usize,
+    }
+
+    impl Game {
+        fn make_deck() -> Vec<Card> { //helper function that creates the deck 
+            let mut deck = Vec::new();
+            for i in 0..=13 {
+                deck.push(Card::new(Suit::Heart, i));
+            }
+            for i in 0..=13 {
+                deck.push(Card::new(Suit::Diamond, i));
+            }
+            for i in 0..=13 {
+                deck.push(Card::new(Suit::Spade, i));
+            }
+            for i in 0..=13 {
+                deck.push(Card::new(Suit::Club, i));
+            }
+            let mut rng = rand::thread_rng();
+            deck.shuffle(&mut rng);
+            return deck;
+        }
+
+        pub fn new(number_of_players: usize) -> Game {
+            let deck = Game::make_deck();
+            let mut players: Vec<Player> = Vec::new();
+            for i in 0..number_of_players {
+                players.push(Player::new(i));
+            }
+            Game {
+                deck,
+                discard: vec![],
+                frozen: false,
+                players,
+                player_turn: 0,
+            }
+        }
+
+        pub fn deal(&mut self, number_of_cards: usize) {
+            if number_of_cards * self.players.len() >= self.deck.len() {
+                panic!("Too many cards to deal");
+            }
+            for _ in 0..number_of_cards {
+                for i in 0..self.players.len() {
+                    self.players[i].hand.push(self.deck.pop().unwrap())
                 }
             }
-            else if rank < 8 { 5 }
-            else { 10 };
-        Card {
-            suit,
-            rank,
-            value,
+            self.discard.push(self.deck.pop().unwrap());
+        }
+
+        pub fn get_discard(&self) -> &Vec<Card> { //returns reference to discard pile 
+            return &self.discard;
+        }
+
+        pub fn current_player(&self) -> usize {
+            self.player_turn
+        }
+
+        pub fn get_player(&mut self, id: usize) -> &mut Player {
+            return &mut self.players[id];
+        }
+
+        fn next_turn(&mut self) {
+            self.player_turn += 1; 
+            self.player_turn %= self.players.len();
+            self.players[self.player_turn].turn_phase = player::TurnPhase::Draw;
+        }
+
+        pub fn push_discard(&mut self, card: Card) {
+            self.discard.push(card);
+            self.next_turn();        
+        }
+
+        pub fn pop_deck(&mut self) -> Option<Card> {
+            self.deck.pop()
+        }
+
+        pub fn push_deck(&mut self, card: Card) {
+            self.deck.push(card);
         }
     }
 }
 
-struct Meld {
-    rank: u32,
-    cards: Vec<Card>,
-    natural: bool,
-}
-
-impl Meld {
-    //new
-
-}
-
-struct Player {
-    id: usize,
-    hand: Vec<Card>,
-    melds: Vec<Meld>,
-    team_number: usize,
-}
-
-impl Player {
-    fn new(id: usize, team_number: usize) -> Player {
-        Player { 
-            id,
-            hand: vec![],
-            melds: vec![], 
-            team_number 
+pub mod prints {
+    use super::game::cards::*;
+    pub fn print_discard(cards: &Vec<Card>) {
+        println!("Discard pile with most recent card printing first");
+        for card in cards.iter().rev() {
+            println!("{:?}", card);
         }
+        println!("");
+    }
+
+    pub fn print_hand(hand: &Vec<Card>) {
+        println!("Hand of player");
+        for (i, card) in hand.iter().enumerate() {
+            println!("{}: {:?}", i, card);
+        }
+        println!("");
     }
 }
 
-pub struct GameSettings {
-    players_per_team: usize,
-    number_of_teams: usize,
-    points_first_meld: usize,
-    out_canastas: usize,
-    points_to_win: usize, //set to 0 if just a hand
-    first_meld_increment: usize,
-} 
-
-impl GameSettings {
-    pub fn new(players: usize) -> GameSettings {
-        GameSettings {
-            players_per_team: 1,
-            number_of_teams: players,
-            points_first_meld: 50,
-            out_canastas: 2,
-            points_to_win: 0,
-            first_meld_increment: 0,
-        }
-    }
-
-    pub fn set_teams(&mut self, teams: usize) -> Result<usize,Error> {
-
-
-
-
-
-        return Ok(0);
-    }
-}
-
-pub struct Game {
-    deck: Vec<Card>,
-    discard: Vec<Card>, 
-    players: Vec<Player>, //first player to play (Player after "Dealer") is player 0
-    player_turn: usize,
-    round_number: usize,
-
-    parameters: GameSettings,
-}
-
-impl Game {
-    pub fn new(settings: GameSettings) -> Game {
-        let mut players: Vec<Player> = Vec::new();
-        let mut team_num = 0; 
-        for i in 0..(settings.number_of_teams * settings.players_per_team) {
-            players.push(Player::new(i, team_num));
-            team_num += 1;
-            if team_num == settings.number_of_teams {
-                team_num = 0;
-            }
-        }
-        Game {
-            deck: Game::make_deck(),
-            discard: vec![],
-            players,
-            player_turn: 0,
-            round_number: 0,
-            parameters: settings
-        }
-    }
-
-    fn make_deck() -> Vec<Card> {
-        let mut deck = Vec::new();
-        for i in 0..=13 {
-            deck.push(Card::new(Suit::Heart, i));
-        }
-        for i in 0..=13 {
-            deck.push(Card::new(Suit::Diamond, i));
-        }
-        for i in 0..=13 {
-            deck.push(Card::new(Suit::Spade, i));
-        }
-        for i in 0..=13 {
-            deck.push(Card::new(Suit::Club, i));
-        }
-        return deck;
-    }
-}
+pub mod errors;
 
 #[cfg(test)]
 mod tests;
