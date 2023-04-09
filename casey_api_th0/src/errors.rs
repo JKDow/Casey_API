@@ -15,10 +15,10 @@ pub struct SettingsError {
 }
 
 impl SettingsError {
-    pub fn new(error_type: SettingsErrorType, message: String) -> SettingsError {
+    pub fn new(error_type: SettingsErrorType, message: &str) -> SettingsError {
         SettingsError {
             error_type,
-            message,
+            message: String::from(message)
         }
     }
 }
