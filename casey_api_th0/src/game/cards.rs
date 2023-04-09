@@ -6,7 +6,6 @@ pub enum Suit {
     Club,
 }
 
-#[derive(Debug, Clone)]
 pub struct Card {
     suit: Suit, 
     pub (crate) rank: usize,  // 0 is joker, 1 is ace - 13 is king
@@ -43,7 +42,6 @@ impl Card {
     }
 }
 
-#[derive(Debug)]
 pub struct Meld {
     pub(crate) rank: usize,
     cards: Vec<Card>,

@@ -5,19 +5,21 @@ use crate::errors::{SettingsErrorType, SettingsError};
 use crate::game::admin::GameAdmin;
 
 pub struct GameSettings {
-    num_players: u8,
-    team_size: u8,
-    canastas_out: u8,
-    points_to_win: u16,
+    pub(crate) num_players: u8,
+    pub(crate) team_size: u8,
+    pub(crate) canastas_out: u8,
+    pub(crate) points_to_win: u16,
+    pub(crate) deal_size: u8,
 }
 
 impl GameSettings {
-    pub fn new(num_players: u8, team_size: u8, canastas_out: u8) -> GameSettings {
+    pub fn new(num_players: u8, team_size: u8, canastas_out: u8, deal_size: u8) -> GameSettings {
         GameSettings {
             num_players,
             team_size,
             canastas_out,
             points_to_win: 0,
+            deal_size,
         }
     }
 
@@ -50,6 +52,8 @@ impl GameSettings {
             return Err(SettingsError::new(SettingsErrorType::InvalidPlayerRatio, "Number of players must be divisible by team size"));
         } else if self.canastas_out > 11 {
             return Err(SettingsError::new(SettingsErrorType::InvalidCanastaOut, "Number of canastas to go out must be less than 12"));
+        } else if self.deal_size * self.num_players >= 112 {
+            return Err(SettingsError::new(SettingsErrorType::InvalidDealSize, "Deal size is too large for the number of players"));
         } else {
             return Ok(GameAdmin::new(self));
         } 
