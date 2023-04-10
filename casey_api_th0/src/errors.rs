@@ -53,3 +53,29 @@ impl fmt::Display for PlayerError {
         write!(f, "Error: {}", self.message)
     }
 }
+
+//Error type for admin actions 
+#[derive(Debug)]
+pub enum AdminErrorType {
+
+}
+
+pub struct AdminError {
+    pub error_type: AdminErrorType,
+    message: String,
+}
+
+impl AdminError {
+    pub fn new(error_type: AdminErrorType, message: &str) -> AdminError {
+        AdminError {
+            error_type,
+            message: String::from(message)
+        }
+    }
+}
+
+impl fmt::Display for AdminError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Error: {}", self.message)
+    }
+}

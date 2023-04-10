@@ -4,8 +4,10 @@ Is the central server players communicate with
 Acts as the admin command block aswel
 */
 
+use std::sync::RwLock;
 use std::thread;
 use std::sync::mpsc;
+use crate::errors::AdminError;
 use crate::errors::PlayerError;
 use crate::errors::PlayerErrorType;
 use crate::game::players::Player;
@@ -16,10 +18,12 @@ use crate::game::cards::*;
 pub struct GameAdmin {
     game_id: u32,
 
-    running: bool,
+    running: RwLock<bool>,
     points_to_win: u16,
 
     pub(crate) players: Vec<Option<Player>>, //vec of players - is option to allow for empty slots
+    hand_backups: Vec<Vec<Card>>, //vec of vecs of cards - one vec of cards for each player
+
     deck: Vec<Card>,    
     discard: Vec<Card>,
     melds: Vec<Vec<Meld>>, //vec of vecs of melds - one vec of melds for each team 
@@ -56,9 +60,10 @@ impl GameAdmin {
 
         GameAdmin {
             game_id,
-            running: false,
+            running: RwLock::new(false),
             points_to_win: settings.points_to_win,
             players: wrapped,
+            hand_backups: Vec::new(),
             deck,
             discard: Vec::new(),
             melds: Vec::new(),
@@ -70,7 +75,8 @@ impl GameAdmin {
     }
 
     pub fn running(&self) -> bool {
-        self.running
+        let running = self.running.read().unwrap();
+        *running
     }
 
     pub fn take_player(&mut self, player_num: u8) -> Result<Player, PlayerError> {
@@ -97,6 +103,24 @@ impl GameAdmin {
         Ok(())
     }
 
+    pub fn start(&mut self) -> Result<(), AdminError>{
+        {
+            let mut running = self.running.write().unwrap();
+            *running = true;
+        }
+        let handler = thread::spawn(move || {
+            loop {
+                let running = self.running.read().unwrap();
+                if !*running {
+                    break;
+                }
+                //drop(running);
+            }
+        });
+
+        return Ok(());
+    }
+
 }
 
 //helper function that creates the deck 
@@ -120,6 +144,7 @@ fn make_deck() -> Vec<Card> {
     return deck;
 }
 
+//The admin request is a message players send to the admin making requests for infomation 
 pub(crate) enum AdminRequestType {
     
 }
