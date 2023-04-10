@@ -20,9 +20,15 @@ pub(crate) struct GameMessage {
 /* 
 Name: Player Message
 Description: Message sent from the game to a player with updates and requests
+Types:
+    GameStarted - the game has started - gives a copy of the current discard pile, 0 is the lowwest card
+    ActionRequest - the player needs to respond with an action
 */
-pub(crate) enum PlayerMessage {
-    GameStarted(Vec<Card>)
+pub enum PlayerMessage {
+    GameStarted(Vec<Card>),
+    ActionRequest(ActionRequest),
+    DenyAction(ActionDeny),
+    GameUpdate,
 }
 
 /* 
@@ -68,7 +74,6 @@ pub enum ActionDeny {
 pub struct ActionRequest {
     code: u32,  //code for the action to ensure that the correct reply is being used 
     action_type: ActionRequestType, //the type of action the player is being asked to do
-    error: Option<ActionDeny>,  //if the player responds and it is not valid then this will contain the reason 
 }
 
 //Reply
@@ -77,4 +82,10 @@ pub(crate) enum ActionReplyType {
     TakeDiscard(Vec<Card>),
     Meld(Vec<Card>),
     Throw(Card),
+}
+
+pub(crate) struct ActionReply {
+    code: u32,  //code for the action to ensure that the correct reply is being used 
+    action_type: ActionReplyType, //the type of action the player is being asked to do
+    hand_backup: Vec<Card>, //the hand of the player before the action was taken
 }

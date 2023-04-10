@@ -1,7 +1,7 @@
 /* 
 Holds the game struct which contains the core game logic
 Is the central server players communicate with
-Acts as the admin command block aswel
+Is only accessible through the admin and player structs 
 */
 
 use std::thread;
@@ -193,7 +193,7 @@ impl Game {
                         AdminMessage::PauseGame => pause = true,  //pause the game by looping here
                         AdminMessage::ResumeGame => pause = false, //wait for this resume message 
                         AdminMessage::EndGame => {
-                            // add score reporting here
+                            //pass game object back to admin and end
                             self.running = false;
                             handle_admin = false;
                         }
@@ -211,6 +211,12 @@ impl Game {
         }
     }
 
+    /* 
+    Name: handle_player_request()
+    Description: Receives and handles all messages from the players
+    Params: None
+    Returns: None
+    */
     fn handle_player_request(&mut self) {
         //handle player requests
         match self.rx.try_recv() {
@@ -227,6 +233,12 @@ impl Game {
         }
     }
 
+    /* 
+    Name: run_game()
+    Description: Handles the game state and runs the game
+    Params: None
+    Returns: None
+    */
     fn run_game(&mut self) {
         match self.game_state {
             GameState::NewTurn => {
@@ -242,10 +254,24 @@ impl Game {
         }
     }
 
+    /* 
+    Name: msg_admin()
+    Description: Sends a message to the admin
+    Params:
+        msg: AdminReply - the message to send
+    Returns: None
+    */
     fn msg_admin(&mut self, msg: AdminReply) {
-        self.admin_out.send(msg).expect("Failed to send message to admin");
+        self.admin_out.send(msg).expect("Failed to send message to admin"); //if the admin cant accept messages communcation is over
     }
 
+    /* 
+    Name: insert_player()
+    Description: Inserts a player into the game
+    Params:
+        player: Player - the player to insert
+    Returns: Result - Ok if the player was inserted, Err if the player was not inserted
+    */
     pub(crate) fn insert_player(&mut self, player: Player) -> Result<(), PlayerError> {
         if player.game_id != self.game_id {
             return Err(PlayerError::new(PlayerErrorType::PlayerFromWrongGame(player), "Player from wrong game"));
@@ -258,6 +284,15 @@ impl Game {
         Ok(())
     }
 
+    /* 
+    Name: take_player()
+    Description: Takes a player from the game
+    Params:
+        player_id: u8 - the id of the player to take
+    Returns: Result 
+        Ok if the player was taken and contains the player
+        Err if the player was not taken
+    */
     pub(crate) fn take_player(&mut self, player_id: u8) -> Result<Player, PlayerError> {
         if player_id >= self.players.len() as u8 {
             return Err(PlayerError::new(PlayerErrorType::InvalidPlayerNumber, "Player number out of range"));

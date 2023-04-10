@@ -103,3 +103,42 @@ impl fmt::Display for AdminError {
         write!(f, "Error: {}", self.message)
     }
 }
+
+/* 
+Name: Player Message Error
+Description: Error type for player receiving messages
+Types: 
+    NoMessage
+    GameDisconnected
+*/
+#[derive(Debug)]
+pub enum PlayerMessageErrorType {
+    NoMessage,
+    GameDisconnected,
+}
+#[derive(Debug)]
+pub struct PlayerMessageError {
+    pub error_type: PlayerMessageErrorType,
+    message: String,
+}
+impl PlayerMessageError {
+    pub fn new(error_type: PlayerMessageErrorType, message: &str) -> PlayerMessageError {
+        PlayerMessageError {
+            error_type,
+            message: String::from(message)
+        }
+    }
+}
+impl fmt::Display for PlayerMessageError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Error: {}", self.message)
+    }
+}
+impl From<std::sync::mpsc::TryRecvError> for PlayerMessageError {
+    fn from(error: std::sync::mpsc::TryRecvError) -> Self {
+        match error {
+            std::sync::mpsc::TryRecvError::Empty => PlayerMessageError::new(PlayerMessageErrorType::NoMessage, "No message, just wait"),
+            std::sync::mpsc::TryRecvError::Disconnected => PlayerMessageError::new(PlayerMessageErrorType::GameDisconnected, "The game disconnected or has had to repair this player"),
+        }
+    }
+}
