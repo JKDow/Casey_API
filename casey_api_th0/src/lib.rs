@@ -7,6 +7,10 @@ pub mod game{
     pub mod admin;
     pub mod cards;
     pub mod players;
+    mod thread {
+        pub(crate) mod messages;
+        pub(crate) mod core; 
+    }
 }
 
 #[cfg(test)]

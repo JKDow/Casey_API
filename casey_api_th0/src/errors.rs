@@ -36,6 +36,7 @@ pub enum PlayerErrorType {
     PlayerFromWrongGame,  //game ID does not match 
     PlayerAlreadyInserted,  //somehow the player has been duplicated and is being inserted again 
 }
+#[derive(Debug)]
 pub struct PlayerError {
     pub error_type: PlayerErrorType,
     message: String,

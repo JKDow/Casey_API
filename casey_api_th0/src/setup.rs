@@ -2,7 +2,7 @@
 //number of players, team size, canastas to go out, game vs hand
 
 use crate::errors::{SettingsErrorType, SettingsError};
-use crate::game::admin::GameAdmin;
+use crate::game::admin::Admin;
 
 pub struct GameSettings {
     pub(crate) num_players: u8,
@@ -43,7 +43,7 @@ impl GameSettings {
     //checks that the number of players is greater than 1
     //checks that the number of canastas to go out is greater than 0
     //checks that the number of canastas to go out is less than 13
-    pub fn confirm_settings(&self) -> Result<GameAdmin, SettingsError> {
+    pub fn confirm_settings(&self) -> Result<Admin, SettingsError> {
         if self.team_size == 0 {
             return Err(SettingsError::new(SettingsErrorType::InvalidTeamSize, "Team size cannot be 0"));
         } else if self.num_players < 2 {
@@ -55,7 +55,7 @@ impl GameSettings {
         } else if self.deal_size * self.num_players >= 112 {
             return Err(SettingsError::new(SettingsErrorType::InvalidDealSize, "Deal size is too large for the number of players"));
         } else {
-            return Ok(GameAdmin::new(self));
+            return Ok(Admin::new(self));
         } 
     }
 }

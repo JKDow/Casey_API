@@ -24,7 +24,7 @@ fn player_num_team_num() {
     let mut admin = settings.confirm_settings().unwrap();
     let mut players: Vec<Player> = vec![]; 
     for i in 0..4 {
-        players.push(admin.players[i].take().unwrap());
+        players.push(admin.take_player(i).unwrap());
     }
     for i in 0..4 {
         assert_eq!(players[i].player_num, i as u8);
