@@ -1,6 +1,15 @@
 use::std::fmt;
 
-//Error type for confirming settings 
+/*
+Name: Settings Error
+Description: Error type for conmfirming settings
+Types: 
+    InvalidNumberOfPlayers
+    InvalidTeamSize
+    InvalidPlayerRatio
+    InvalidCanastaOut
+    InvalidDealSize
+*/
 #[derive(Debug)]
 pub enum SettingsErrorType {
     InvalidNumberOfPlayers,
@@ -28,13 +37,21 @@ impl fmt::Display for SettingsError {
     }
 }
 
-//Error type for taking and inserting players 
+/* 
+Namme: Player Error
+Description: Error type for taking and inserting players 
+Types: 
+    InvalidPlayerNumber     - Player number out of bounds
+    PlayerAlreadyTaken      - already been taken from vector
+    PlayerFromWrongGame     - game ID does not match 
+    PlayerAlreadyInserted   - somehow the player has been duplicated and is being inserted again 
+*/
 #[derive(Debug)]
 pub enum PlayerErrorType {
-    InvalidPlayerNumber, //Player number out of bounds
-    PlayerAlreadyTaken, //already been taken from vector
-    PlayerFromWrongGame,  //game ID does not match 
-    PlayerAlreadyInserted,  //somehow the player has been duplicated and is being inserted again 
+    InvalidPlayerNumber, 
+    PlayerAlreadyTaken, 
+    PlayerFromWrongGame,  
+    PlayerAlreadyInserted,  
 }
 #[derive(Debug)]
 pub struct PlayerError {
@@ -55,10 +72,15 @@ impl fmt::Display for PlayerError {
     }
 }
 
-//Error type for admin actions 
+/*
+Name: Admin Error
+Description: Error type for admin actions 
+Types:  
+    GameAlreadyRunning
+*/
 #[derive(Debug)]
 pub enum AdminErrorType {
-
+    GameAlreadyRunning,
 }
 
 pub struct AdminError {

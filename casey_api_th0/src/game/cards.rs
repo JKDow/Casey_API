@@ -6,6 +6,7 @@ pub enum Suit {
     Club,
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct Card {
     suit: Suit, 
     pub (crate) rank: usize,  // 0 is joker, 1 is ace - 13 is king
