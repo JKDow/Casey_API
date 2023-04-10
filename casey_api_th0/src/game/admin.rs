@@ -11,6 +11,7 @@ use crate::errors::PlayerErrorType;
 use crate::game::players::Player;
 use crate::setup::GameSettings;
 use crate::game::cards::*;
+
 //contains players, deck, discard, melds, msg channels, tread handles
 pub struct GameAdmin {
     game_id: u32,
@@ -22,6 +23,7 @@ pub struct GameAdmin {
     deck: Vec<Card>,    
     discard: Vec<Card>,
     melds: Vec<Vec<Meld>>, //vec of vecs of melds - one vec of melds for each team 
+    
     rx: mpsc::Receiver<AdminRequest>, //msg in 
     player_tx: Vec<mpsc::Sender<PlayerMessage>>, //msg out to players
     handle: Option<thread::JoinHandle<()>>
@@ -29,10 +31,15 @@ pub struct GameAdmin {
 
 impl GameAdmin {
     pub(crate) fn new (settings: &GameSettings) -> GameAdmin {
+        let (tx_admin, rx_admin) = mpsc::channel();
+
         let game_id = rand::random();
         let mut players: Vec<Player> = Vec::new();
+        let mut senders: Vec<mpsc::Sender<PlayerMessage>> = Vec::new();
         for i in 0..settings.num_players {
-            players.push(Player::new(game_id, i, i % settings.team_size));
+            let (tx_player, rx_player) = mpsc::channel();
+            senders.push(tx_player);
+            players.push(Player::new(game_id, i, i % settings.team_size, (tx_admin.clone(), rx_player)));
         }
 
         let mut deck = make_deck();
@@ -56,6 +63,9 @@ impl GameAdmin {
             discard: Vec::new(),
             melds: Vec::new(),
             handle: None,
+
+            rx: rx_admin,
+            player_tx: senders,
         }
     }
 
@@ -110,20 +120,20 @@ fn make_deck() -> Vec<Card> {
     return deck;
 }
 
-enum AdminRequestType {
+pub(crate) enum AdminRequestType {
     
 }
 
-struct AdminRequest {
+pub(crate) struct AdminRequest {
     player_num: u8,
     request: AdminRequestType,
 }
 
 
-enum PlayerMessageType {
+pub(crate) enum PlayerMessageType {
 
 }
 
-struct PlayerMessage {
+pub(crate) struct PlayerMessage {
     msg_type: PlayerMessageType,
 }

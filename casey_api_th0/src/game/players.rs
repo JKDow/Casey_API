@@ -13,12 +13,15 @@ pub struct Player {
 }
 
 impl Player {
-    pub(crate) fn new(game_id: u32, player_num: u8, team_num: u8) -> Player {
+    pub(crate) fn new(game_id: u32, player_num: u8, team_num: u8, coms: (mpsc::Sender<AdminRequest>, mpsc::Receiver<PlayerMessage>)) -> Player {
         Player {
             game_id,
             player_num,
             team_num,
             hand: Vec::new(),
+
+            tx: coms.0,
+            rx: coms.1,
         }
     }
 }

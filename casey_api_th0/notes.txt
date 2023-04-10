@@ -1,0 +1,3 @@
+Handling potential loss of player objects:
+    -Every action backs up the player hand 
+    -If a message fails that player is tagged lost and re created in the vector 
