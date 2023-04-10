@@ -11,9 +11,9 @@ use crate::game::players::Player;
 use crate::setup::GameSettings;
 use crate::game::cards::*;
 use crate::game::thread::messages::{GameMessageType, GameMessage, PlayerMessage, AdminMessage, AdminReply};
+use crate::errors::{PlayerError, PlayerErrorType};
 
 enum GameState {
-    PreGame, //game has not started yet
     NewTurn, //send data out to players and go next state
     WaitingForDraw, //wait for player response 
     UpdateDraw, //draw has been chosen, msg players and wait for action
@@ -90,7 +90,7 @@ impl Game {
             points_to_win: settings.points_to_win,
             canastas_out: settings.canastas_out,
             team_size: settings.team_size,
-            game_state: GameState::PreGame,
+            game_state: GameState::NewTurn,
             current_player: 0,
 
             players: wrapped,
@@ -136,44 +136,23 @@ impl Game {
 
         thread::spawn(move || {
             while self.running {
-                //handle admin messages
-                match self.admin_in.try_recv() {
-                    Ok(msg) => {
-                        //handle the message
-                    }
-                    Err(e) => {
-                        if e == TryRecvError::Disconnected {
-                            panic!("Admin disconnected");   //Maybe handle better?
-                        }
-                    }
-                }
+                //Handle admin messages
+                self.handle_admin_request();
                 //handle player requests
-                match self.rx.try_recv() {
-                    Ok(msg) => {
-                        //handle the message
-                    }
-                    Err(e) => {
-                        if e == TryRecvError::Disconnected {
-                            for i in 0..self.players.len() {
-                                self.fix_player(i as u8);
-                            }
-                        }
-                    }
-                }
-                
+                self.handle_player_request();
                 //handle the game state 
-                match self.game_state {
-                    GameState::PreGame => {}
-                    GameState::NewTurn => {}
-                    GameState::WaitingForDraw => {}
-                    GameState::UpdateDraw => {}
-                    GameState::WaitingForAction => {}
-                    GameState::Finished => {}
-                }
+                self.run_game();
             }
         })
     }
 
+    /* 
+    Name: fix player
+    Description: Fixes a player if they disconnect
+    Params:
+        player_id: u8 - the id of the player to fix
+    Returns: None
+    */
     fn fix_player(&mut self, player_id: u8) {
 
         println!("Player {} disconnected", player_id);
@@ -183,6 +162,111 @@ impl Game {
         player.set_hand(self.hand_backups[player_id as usize].clone());
         self.player_tx[player_id as usize] = tx_player;
         self.players[player_id as usize] = Some(player)
+    }
+
+    /*
+    Name: handle_admin_request()
+    Description: 
+        Receives and handles all messages from the admin 
+        Admin gets priority and will have all their messages handled each time this is called
+    Params: None
+    Returns: None
+    */
+    fn handle_admin_request(&mut self) {
+        let mut handle_admin = true; 
+        let mut pause = false;
+        while handle_admin {
+            match self.admin_in.try_recv() {
+                Ok(msg) => {
+                    //handle the message
+                    match msg {
+                        AdminMessage::TakePlayer(id) => {
+                            //attempt to take and reply to admin
+                            let result = self.take_player(id);
+                            self.msg_admin(AdminReply::TakePlayer(result));
+                        }
+                        AdminMessage::InsertPlayer(player) => {
+                            //attempt to insert and reply to admin
+                            let result = self.insert_player(player);
+                            self.msg_admin(AdminReply::InsertPlayer(result));
+                        }
+                        AdminMessage::PauseGame => pause = true,  //pause the game by looping here
+                        AdminMessage::ResumeGame => pause = false, //wait for this resume message 
+                        AdminMessage::EndGame => {
+                            // add score reporting here
+                            self.running = false;
+                            handle_admin = false;
+                        }
+                    }
+                }
+                Err(e) => {
+                    if e == TryRecvError::Disconnected {
+                        panic!("Admin disconnected");   //Maybe handle better?
+                    }
+                    if pause == false {
+                        handle_admin = false;
+                    }
+                }
+            } 
+        }
+    }
+
+    fn handle_player_request(&mut self) {
+        //handle player requests
+        match self.rx.try_recv() {
+            Ok(msg) => {
+                //handle the message
+            }
+            Err(e) => {
+                if e == TryRecvError::Disconnected {
+                    for i in 0..self.players.len() {
+                        self.fix_player(i as u8);
+                    }
+                }
+            }
+        }
+    }
+
+    fn run_game(&mut self) {
+        match self.game_state {
+            GameState::NewTurn => {
+                //msg the player whos turn it is with an action object for drawing
+                //move to next state
+            }
+            GameState::WaitingForDraw => {
+                //do nothing really
+            }
+            GameState::UpdateDraw => {}
+            GameState::WaitingForAction => {}
+            GameState::Finished => {}
+        }
+    }
+
+    fn msg_admin(&mut self, msg: AdminReply) {
+        self.admin_out.send(msg).expect("Failed to send message to admin");
+    }
+
+    pub(crate) fn insert_player(&mut self, player: Player) -> Result<(), PlayerError> {
+        if player.game_id != self.game_id {
+            return Err(PlayerError::new(PlayerErrorType::PlayerFromWrongGame(player), "Player from wrong game"));
+        }
+        if self.players[player.player_num as usize].is_some() {
+            return Err(PlayerError::new(PlayerErrorType::PlayerAlreadyInserted(player), "Player already exists"));
+        }
+        let num = player.player_num as usize;
+        self.players[num] = Some(player);
+        Ok(())
+    }
+
+    pub(crate) fn take_player(&mut self, player_id: u8) -> Result<Player, PlayerError> {
+        if player_id >= self.players.len() as u8 {
+            return Err(PlayerError::new(PlayerErrorType::InvalidPlayerNumber, "Player number out of range"));
+        }
+        let player = self.players[player_id as usize].take();
+        match player {
+            Some(player) => Ok(player),
+            None => Err(PlayerError::new(PlayerErrorType::InvalidPlayerNumber, "Player not found")),
+        }
     }
 }
 

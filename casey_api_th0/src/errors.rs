@@ -1,4 +1,5 @@
 use::std::fmt;
+use crate::game::players::Player;
 
 /*
 Name: Settings Error
@@ -43,15 +44,15 @@ Description: Error type for taking and inserting players
 Types: 
     InvalidPlayerNumber     - Player number out of bounds
     PlayerAlreadyTaken      - already been taken from vector
-    PlayerFromWrongGame     - game ID does not match 
-    PlayerAlreadyInserted   - somehow the player has been duplicated and is being inserted again 
+    PlayerFromWrongGame     - game ID does not match, returns player for retreival 
+    PlayerAlreadyInserted   - somehow the player has been duplicated and is being inserted again, returns player for retreival
 */
 #[derive(Debug)]
 pub enum PlayerErrorType {
     InvalidPlayerNumber, 
     PlayerAlreadyTaken, 
-    PlayerFromWrongGame,  
-    PlayerAlreadyInserted,  
+    PlayerFromWrongGame(Player),  
+    PlayerAlreadyInserted(Player),  
 }
 #[derive(Debug)]
 pub struct PlayerError {

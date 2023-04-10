@@ -2,6 +2,7 @@ use crate::game::cards::Card;
 use std::sync::mpsc;
 use crate::game::thread::messages::{GameMessage, PlayerMessage};
 
+#[derive(Debug)]
 pub struct Player {
     pub(crate) game_id: u32,
     pub(crate) player_num: u8,
