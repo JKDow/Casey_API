@@ -1,10 +1,15 @@
 use crate::game::cards::Card;
+use std::sync::mpsc;
+use crate::game::admin::{AdminRequest, PlayerMessage};
 
 pub struct Player {
     pub(crate) game_id: u32,
     pub(crate) player_num: u8,
     pub(crate) team_num: u8,
     pub(crate) hand: Vec<Card>,
+
+    tx: mpsc::Sender<AdminRequest>,
+    rx: mpsc::Receiver<PlayerMessage>,
 }
 
 impl Player {

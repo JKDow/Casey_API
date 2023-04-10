@@ -4,6 +4,8 @@ Is the central server players communicate with
 Acts as the admin command block aswel
 */
 
+use std::thread;
+use std::sync::mpsc;
 use crate::errors::PlayerError;
 use crate::errors::PlayerErrorType;
 use crate::game::players::Player;
@@ -20,9 +22,9 @@ pub struct GameAdmin {
     deck: Vec<Card>,    
     discard: Vec<Card>,
     melds: Vec<Vec<Meld>>, //vec of vecs of melds - one vec of melds for each team 
-    //msg in
-    //msg out vec
-    //thread handles
+    rx: mpsc::Receiver<AdminRequest>, //msg in 
+    player_tx: Vec<mpsc::Sender<PlayerMessage>>, //msg out to players
+    handle: Option<thread::JoinHandle<()>>
 }
 
 impl GameAdmin {
@@ -53,6 +55,7 @@ impl GameAdmin {
             deck,
             discard: Vec::new(),
             melds: Vec::new(),
+            handle: None,
         }
     }
 
@@ -105,4 +108,22 @@ fn make_deck() -> Vec<Card> {
     let mut rng = rand::thread_rng();
     deck.shuffle(&mut rng);
     return deck;
+}
+
+enum AdminRequestType {
+    
+}
+
+struct AdminRequest {
+    player_num: u8,
+    request: AdminRequestType,
+}
+
+
+enum PlayerMessageType {
+
+}
+
+struct PlayerMessage {
+    msg_type: PlayerMessageType,
 }
