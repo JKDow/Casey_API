@@ -1,4 +1,4 @@
-/* 
+/*
 Holds the game struct which contains the core game logic until released to start tge fane
 Works as the command block for the game to send commands to the game thread 
 If the admin object is dropped the game will end as the game thread will stop and drop itself 

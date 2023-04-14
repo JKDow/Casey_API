@@ -24,11 +24,33 @@ Types:
     GameStarted - the game has started - gives a copy of the current discard pile, 0 is the lowwest card
     ActionRequest - the player needs to respond with an action
 */
-pub enum PlayerMessage {
+pub enum PlayerMessageType {
     GameStarted(Vec<Card>),
     ActionRequest(ActionRequest),
     DenyAction(ActionDeny),
     GameUpdate,
+}
+
+pub struct PlayerMessage {
+    msg_type: Option<PlayerMessageType>,
+    text: String,
+}
+
+impl PlayerMessage {
+    pub(crate) fn new(msg_type: PlayerMessageType, text: &str) -> PlayerMessage {
+        PlayerMessage {
+            msg_type: Some(msg_type),
+            text: String::from(text),
+        }
+    }
+
+    pub fn get_type(&mut self) -> Option<PlayerMessageType> {
+        self.msg_type.take()
+    }
+
+    pub fn read(&self) -> String {
+        self.text.clone()
+    }
 }
 
 /* 
@@ -65,15 +87,9 @@ pub enum ActionRequestType {
     MeldThrow,
 }
 
-pub enum ActionDeny {
-    InvalidCardsTakePack,
-    InvalidCardsMeld,
-    FirstMeldPoints
-}
-
 pub struct ActionRequest {
-    code: u32,  //code for the action to ensure that the correct reply is being used 
-    action_type: ActionRequestType, //the type of action the player is being asked to do
+    pub(crate) code: u32,  //code for the action to ensure that the correct reply is being used 
+    pub(crate) action_type: ActionRequestType, //the type of action the player is being asked to do
 }
 
 //Reply
@@ -88,4 +104,16 @@ pub(crate) struct ActionReply {
     code: u32,  //code for the action to ensure that the correct reply is being used 
     action_type: ActionReplyType, //the type of action the player is being asked to do
     hand_backup: Vec<Card>, //the hand of the player before the action was taken
+}
+
+//deny action
+pub enum ActionDenyType {
+    InvalidCardsTakePack,
+    InvalidCardsMeld,
+    FirstMeldPoints
+}
+
+pub struct ActionDeny {
+    deny_type: ActionDenyType,
+    msg: String,
 }

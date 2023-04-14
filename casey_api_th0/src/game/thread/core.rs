@@ -1,4 +1,4 @@
-/* 
+/**
 Holds the game struct which contains the core game logic
 Is the central server players communicate with
 Is only accessible through the admin and player structs 
@@ -10,8 +10,9 @@ use std::sync::mpsc::TryRecvError;
 use crate::game::players::Player;
 use crate::setup::GameSettings;
 use crate::game::cards::*;
-use crate::game::thread::messages::{GameMessageType, GameMessage, PlayerMessage, AdminMessage, AdminReply};
+use crate::game::thread::messages::{GameMessageType, GameMessage, PlayerMessage, PlayerMessageType, AdminMessage, AdminReply};
 use crate::errors::{PlayerError, PlayerErrorType};
+use super::messages::{ActionRequestType, ActionRequest};
 
 enum GameState {
     NewTurn, //send data out to players and go next state
@@ -31,6 +32,7 @@ pub struct Game {
 
     game_state: GameState,
     current_player: u8,
+    action_code: u32,
 
     pub(crate) players: Vec<Option<Player>>, //vec of players - is option to allow for empty slots
     hand_backups: Vec<Vec<Card>>, //vec of vecs of cards - one vec of cards for each player
@@ -48,7 +50,7 @@ pub struct Game {
 }
 
 impl Game {
-    /* 
+    /**
     Name: new()
     Description: Creates a new game struct
     Params: 
@@ -90,8 +92,10 @@ impl Game {
             points_to_win: settings.points_to_win,
             canastas_out: settings.canastas_out,
             team_size: settings.team_size,
+
             game_state: GameState::NewTurn,
             current_player: 0,
+            action_code: 0,
 
             players: wrapped,
             hand_backups: Vec::new(),
@@ -108,7 +112,7 @@ impl Game {
         }
     }
 
-    /* 
+    /** 
     Name: start()
     Description: Starts the game and contains the main loop 
     Params:
@@ -116,6 +120,8 @@ impl Game {
     Returns: thread::JoinHandle<()> - the thread handle
     */
     pub(crate) fn start(mut self) -> thread::JoinHandle<()>{
+        use PlayerMessageType::*;
+
         self.running = true;    //update running
         let card = self.deck.pop().expect("No cards left in deck"); //get a card from the deck
         self.discard.push(card); //add it to the discard pile
@@ -127,7 +133,7 @@ impl Game {
         }
         //msg all players the game has started and a copy of the discard pile 
         for i in 0..self.players.len() {
-            let success = self.player_tx[i].send(PlayerMessage::GameStarted(self.discard.clone()));
+            let success = self.player_tx[i].send(PlayerMessage::new(GameStarted(self.discard.clone()), "The game has begun and this is the current discard pile"));
             if let Err(e) = success {
                 self.fix_player(i as u8);
                 self.player_tx[i].send(e.0).expect("Failed to send message to player during start after fixing");
@@ -146,7 +152,7 @@ impl Game {
         })
     }
 
-    /* 
+    /** 
     Name: fix player
     Description: Fixes a player if they disconnect
     Params:
@@ -164,7 +170,7 @@ impl Game {
         self.players[player_id as usize] = Some(player)
     }
 
-    /*
+    /**
     Name: handle_admin_request()
     Description: 
         Receives and handles all messages from the admin 
@@ -211,7 +217,7 @@ impl Game {
         }
     }
 
-    /* 
+    /** 
     Name: handle_player_request()
     Description: Receives and handles all messages from the players
     Params: None
@@ -233,7 +239,7 @@ impl Game {
         }
     }
 
-    /* 
+    /** 
     Name: run_game()
     Description: Handles the game state and runs the game
     Params: None
@@ -243,7 +249,14 @@ impl Game {
         match self.game_state {
             GameState::NewTurn => {
                 //msg the player whos turn it is with an action object for drawing
+                let action = ActionRequest{
+                    code: self.action_code,
+                    action_type: ActionRequestType::Draw,
+                };
+                let msg = PlayerMessage::new(PlayerMessageType::ActionRequest(action), "It is your turn. Please draw or take the discard pile");
+                self.msg_player(self.current_player, msg);
                 //move to next state
+                self.game_state = GameState::WaitingForDraw;
             }
             GameState::WaitingForDraw => {
                 //do nothing really
@@ -254,7 +267,7 @@ impl Game {
         }
     }
 
-    /* 
+    /** 
     Name: msg_admin()
     Description: Sends a message to the admin
     Params:
@@ -265,7 +278,27 @@ impl Game {
         self.admin_out.send(msg).expect("Failed to send message to admin"); //if the admin cant accept messages communcation is over
     }
 
-    /* 
+    /** 
+    Name: msg_player()
+    Description: 
+        Sends a message to a player
+        If the player is disconnected it will attempt to fix the player
+    Params:
+        player_id: u8 - the id of the player to send the message to
+        msg: PlayerMessage - the message to send
+    Returns: None
+    */
+    fn msg_player(&mut self, player_id: u8, msg: PlayerMessage) {
+        match self.player_tx[player_id as usize].send(msg) {
+            Ok(_) => {}
+            Err(e) => {
+                self.fix_player(player_id);
+                self.player_tx[player_id as usize].send(e.0).expect("Failed to send message to player after fixing");
+            }
+        }
+    }
+
+    /** 
     Name: insert_player()
     Description: Inserts a player into the game
     Params:
@@ -284,7 +317,7 @@ impl Game {
         Ok(())
     }
 
-    /* 
+    /** 
     Name: take_player()
     Description: Takes a player from the game
     Params:
@@ -305,7 +338,7 @@ impl Game {
     }
 }
 
-/* 
+/** 
 Name: make_deck()
 Description: helper function that creates the deck 
 Params:
