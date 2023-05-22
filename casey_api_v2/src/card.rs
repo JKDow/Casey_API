@@ -10,7 +10,7 @@ pub enum Rank {
     King, Joker
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Suit {
     Hearts,
     Diamonds,
@@ -18,6 +18,7 @@ pub enum Suit {
     Clubs,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct Card {
     pub (crate) id: usize,
     pub (crate) rank: Rank,
@@ -63,6 +64,10 @@ impl Card {
         }
     }
 
+    pub(crate) fn is_red_three(&self) -> bool {
+        self.rank == Rank::Three && (self.suit == Suit::Hearts || self.suit == Suit::Diamonds) 
+    }
+    /*
     pub fn get_value(&self) -> u8 {
         self.value
     }
@@ -74,5 +79,6 @@ impl Card {
     pub fn get_suit(&self) -> Suit {
         self.suit
     }
+    */
 }
 
